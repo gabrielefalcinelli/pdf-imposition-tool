@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Booklet Imposer — by Gabriele Falcinelli</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+
+  <header class="site-header">
+    <p class="eyebrow">Strumento di prestampa</p>
+    <h1>Booklet Imposer<br>con bleed, crocini e creep</h1>
+    <p class="lead">Carica un PDF a pagine singole con abbondanza. Il tool crea un PDF imposto a opuscolo, aggiunge crocini di taglio in base al bleed indicato e applica lo scostamento creep calcolato dallo spessore carta o stimato dalla grammatura.</p>
+    <div class="header-meta">
+      <span class="by-line">by <span>Gabriele Falcinelli</span></span>
+    </div>
+  </header>
+
+  <div class="instructions-bar">
+    <button class="instructions-toggle" id="instrToggle" aria-expanded="false">
+      <span>Come si usa</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="instructions-panel" id="instrPanel" role="region">
+      <div class="instr-step">
+        <div class="step-num">01</div>
+        <div class="step-text">
+          <strong>Esporta il PDF dal programma di impaginazione</strong>
+          Esporta il file a <em>pagine singole</em> con le abbondanze (bleed) già incluse, ma <strong>senza crocini di taglio</strong>: verranno aggiunti da questo tool in fase di imposizione.
+        </div>
+      </div>
+      <div class="instr-step">
+        <div class="step-num">02</div>
+        <div class="step-text">
+          <strong>Carica il PDF e imposta i parametri</strong>
+          Indica il valore del bleed per lato, la lunghezza e lo spessore dei crocini, e i dati della carta (grammatura o spessore manuale) per il calcolo del creep.
+        </div>
+      </div>
+      <div class="instr-step">
+        <div class="step-num">03</div>
+        <div class="step-text">
+          <strong>Analizza e genera</strong>
+          Clicca prima su <em>Analizza PDF</em> per verificare la segnatura, poi su <em>Genera PDF imposto</em> per scaricare il file pronto per la stampa fronte/retro.
+        </div>
+      </div>
+      <div class="instr-step">
+        <div class="step-num">04</div>
+        <div class="step-text">
+          <strong>Tutto resta nel browser</strong>
+          Nessun file viene caricato su server. L'elaborazione avviene interamente nel tuo browser, in totale privacy.
+        </div>
+      </div>
+      <div class="instr-warning" style="grid-column: 1 / -1;">
+        Il bleed centrale viene tagliato in imposizione: dalla pagina sinistra viene rimossa l'abbondanza destra, dalla pagina destra viene rimossa l'abbondanza sinistra. I due trim al vivo si incontrano sulla linea di piega del dorso. <strong>Esporta sempre senza crocini applicati.</strong>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <aside class="card controls">
+      <div class="section-title"><h2>Impostazioni</h2></div>
+
+      <label class="dropzone" for="pdfFile">
+        <strong>Scegli PDF sorgente</strong>
+        <span id="fileName">PDF a pagine singole con bleed</span>
+        <small>I file restano nel browser. Nessun upload server.</small>
+      </label>
+      <input id="pdfFile" type="file" accept="application/pdf" hidden>
+
+      <div class="grid-2" style="margin-top:16px;">
+        <div class="field">
+          <label for="bleedMm">Bleed per lato (mm)</label>
+          <input id="bleedMm" type="number" min="0" step="0.1" value="3">
+        </div>
+        <div class="field">
+          <label for="markLenMm">Lunghezza crocini (mm)</label>
+          <input id="markLenMm" type="number" min="1" step="0.5" value="5">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="markOffsetMm">Distanza crocini dal trim (mm)</label>
+          <input id="markOffsetMm" type="number" min="0" step="0.1" value="1.5">
+        </div>
+        <div class="field">
+          <label for="markWeightPt">Spessore crocini (pt)</label>
+          <input id="markWeightPt" type="number" min="0.1" step="0.1" value="0.3">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="paperGsm">Grammatura (g/m²)</label>
+          <input id="paperGsm" type="number" min="30" step="1" value="135">
+        </div>
+        <div class="field">
+          <label for="bulk">Bulk carta (cm³/g)</label>
+          <input id="bulk" type="number" min="0.5" step="0.05" value="1.0">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="manualThicknessMm">Spessore manuale foglio (mm)</label>
+          <input id="manualThicknessMm" type="number" min="0" step="0.001" placeholder="opzionale">
+          <span class="hint">Se vuoto: spessore ≈ grammatura × bulk / 1000.</span>
+        </div>
+        <div class="field">
+          <label for="creepScale">Fattore creep</label>
+          <input id="creepScale" type="number" min="0" step="0.05" value="1">
+          <span class="hint">Riduci/aumenta se la prova macchina lo richiede.</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="creepMode">Direzione compensazione creep</label>
+        <select id="creepMode">
+          <option value="inward" selected>Progressivo verso il dorso: foglio esterno fermo, fogli interni compensati</option>
+          <option value="none">Non applicare creep</option>
+        </select>
+      </div>
+
+      <div class="toggle-row">
+        <label for="addMarks">Aggiungi crocini di taglio</label>
+        <input id="addMarks" type="checkbox" checked>
+      </div>
+      <div class="toggle-row">
+        <label for="drawFold">Disegna segni di piega dorso</label>
+        <input id="drawFold" type="checkbox" checked>
+      </div>
+      <div class="toggle-row">
+        <label for="keepOuterBleed">Mantieni bleed esterni e testa/piede</label>
+        <input id="keepOuterBleed" type="checkbox" checked disabled>
+      </div>
+
+      <div class="actions">
+        <button id="analyzeBtn" class="secondary" disabled>Analizza PDF</button>
+        <button id="generateBtn" class="primary" disabled>Genera PDF imposto</button>
+      </div>
+      <div id="status" class="status">In attesa del PDF sorgente.</div>
+    </aside>
+
+    <section class="card panel">
+      <div class="section-title">
+        <h2>Anteprima e riepilogo</h2>
+      </div>
+      <div class="metrics">
+        <div class="metric"><span>Pagine sorgente</span><strong id="mPages">—</strong></div>
+        <div class="metric"><span>Fogli imposti</span><strong id="mSheets">—</strong></div>
+        <div class="metric"><span>Trim stimato</span><strong id="mTrim">—</strong></div>
+        <div class="metric"><span>Creep max</span><strong id="mCreep">—</strong></div>
+      </div>
+      <div class="preview-wrap">
+        <canvas id="previewCanvas" width="900" height="600"></canvas>
+      </div>
+      <div class="note">
+        Il bleed centrale viene tagliato in imposizione: dalla pagina sinistra viene rimossa l'abbondanza destra, dalla pagina destra viene rimossa l'abbondanza sinistra. In questo modo i due trim al vivo si incontrano sulla linea di piega del dorso.
+      </div>
+      <table class="signature-table" id="sigTable">
+        <thead><tr><th>Foglio</th><th>Lato</th><th>Pagina sinistra</th><th>Pagina destra</th><th>Creep</th></tr></thead>
+        <tbody><tr><td colspan="5">Carica un PDF per vedere la segnatura.</td></tr></tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-divider"></div>
+    <p class="footer-sig">by <span>Gabriele Falcinelli</span> — uso libero e gratuito</p>
+  </footer>
+
+  <script>
+    // Instructions toggle
+    const toggle = document.getElementById('instrToggle');
+    const panel  = document.getElementById('instrPanel');
+    toggle.addEventListener('click', () => {
+      const open = panel.classList.toggle('visible');
+      toggle.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', open);
+    });
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
