@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Booklet Imposer — by Gabriele Falcinelli</title>
+  <link rel="icon" type="image/jpeg" href="../Opuscolo OK Jolly Roger.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-top">
+      <p class="eyebrow" data-i18n="eyebrow">Strumento di prestampa</p>
+      <div class="lang-switch">
+        <button class="lang-btn active" data-lang="it">ITA</button>
+        <button class="lang-btn" data-lang="en">ENG</button>
+      </div>
+    </div>
+    <h1 data-i18n="title">Booklet Imposer<br>con bleed, crocini e creep</h1>
+    <p class="lead" data-i18n="lead">Carica un PDF a pagine singole con abbondanza. Il tool crea un PDF imposto a opuscolo, aggiunge crocini di taglio in base al bleed indicato e applica lo scostamento creep calcolato dallo spessore carta o stimato dalla grammatura.</p>
+    <div class="header-meta">
+      <span class="by-line" data-i18n="byline">by <span>Gabriele Falcinelli</span></span>
+    </div>
+  </header>
+
+  <div class="instructions-bar">
+    <button class="instructions-toggle" id="instrToggle" aria-expanded="false">
+      <span data-i18n="instrBtn">Come si usa</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="instructions-panel" id="instrPanel" role="region">
+      <div class="instr-step">
+        <div class="step-num" data-i18n="step1num">01</div>
+        <div class="step-text">
+          <strong data-i18n="step1title">Esporta il PDF dal programma di impaginazione</strong>
+          <span data-i18n="step1text">Esporta il file a <em>pagine singole</em> con le abbondanze (bleed) già incluse, ma <strong>senza crocini di taglio</strong>: verranno aggiunti da questo tool in fase di imposizione.</span>
+        </div>
+      </div>
+      <div class="instr-step">
+        <div class="step-num" data-i18n="step2num">02</div>
+        <div class="step-text">
+          <strong data-i18n="step2title">Carica il PDF e imposta i parametri</strong>
+          <span data-i18n="step2text">Indica il valore del bleed per lato, la lunghezza e lo spessore dei crocini, e i dati della carta (grammatura o spessore manuale) per il calcolo del creep.</span>
+        </div>
+      </div>
+      <div class="instr-step">
+        <div class="step-num" data-i18n="step3num">03</div>
+        <div class="step-text">
+          <strong data-i18n="step3title">Analizza e genera</strong>
+          <span data-i18n="step3text">Clicca prima su <em>Analizza PDF</em> per verificare la segnatura, poi su <em>Genera PDF imposto</em> per scaricare il file pronto per la stampa fronte/retro.</span>
+        </div>
+      </div>
+      <div class="instr-step">
+        <div class="step-num" data-i18n="step4num">04</div>
+        <div class="step-text">
+          <strong data-i18n="step4title">Tutto resta nel browser</strong>
+          <span data-i18n="step4text">Nessun file viene caricato su server. L'elaborazione avviene interamente nel tuo browser, in totale privacy.</span>
+        </div>
+      </div>
+      <div class="instr-warning" style="grid-column: 1 / -1;" data-i18n="instrWarning">
+        Il bleed centrale viene tagliato in imposizione: dalla pagina sinistra viene rimossa l'abbondanza destra, dalla pagina destra viene rimossa l'abbondanza sinistra. I due trim al vivo si incontrano sulla linea di piega del dorso. <strong>Esporta sempre senza crocini applicati.</strong>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <aside class="card controls">
+      <div class="section-title"><h2 data-i18n="settingsTitle">Impostazioni</h2></div>
+
+      <label class="dropzone" for="pdfFile">
+        <strong data-i18n="dropzoneTitle">Scegli PDF sorgente</strong>
+        <span id="fileName" data-i18n="dropzoneFile">PDF a pagine singole con bleed</span>
+        <small data-i18n="dropzoneHint">I file restano nel browser. Nessun upload server.</small>
+      </label>
+      <input id="pdfFile" type="file" accept="application/pdf" hidden>
+
+      <div class="grid-2" style="margin-top:16px;">
+        <div class="field">
+          <label for="bleedMm"><span data-i18n="lblBleed">Bleed per lato (mm)</span><span class="tooltip-icon" data-i18n-tt="ttBleed" data-tooltip="Abbondanza per lato in mm. Indica la quantità di pagina in eccesso che verrà rifilata (spesso 3mm).">?</span></label>
+          <input id="bleedMm" type="number" min="0" step="0.1" value="3">
+        </div>
+        <div class="field">
+          <label for="markLenMm"><span data-i18n="lblMarkLen">Lunghezza crocini (mm)</span><span class="tooltip-icon" data-i18n-tt="ttMarkLen" data-tooltip="Lunghezza fisica del tratto stampato per i crocini di ritaglio (es. 5mm).">?</span></label>
+          <input id="markLenMm" type="number" min="1" step="0.5" value="5">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="markOffsetMm"><span data-i18n="lblMarkOffset">Distanza crocini dal trim (mm)</span><span class="tooltip-icon" data-i18n-tt="ttMarkOffset" data-tooltip="Spazio vuoto tra l'angolo di rifilo effettivo e l'inizio del crocino (es. 1.5mm o 2mm).">?</span></label>
+          <input id="markOffsetMm" type="number" min="0" step="0.1" value="1.5">
+        </div>
+        <div class="field">
+          <label for="markWeightPt"><span data-i18n="lblMarkWeight">Spessore crocini (pt)</span><span class="tooltip-icon" data-i18n-tt="ttMarkWeight" data-tooltip="Spessore della linea usata per disegnare i crocini (es. 0.3pt).">?</span></label>
+          <input id="markWeightPt" type="number" min="0.1" step="0.1" value="0.3">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="paperGsm"><span data-i18n="lblGsm">Grammatura (g/m²)</span><span class="tooltip-icon" data-i18n-tt="ttGsm" data-tooltip="Grammatura della carta stampata. Usata in abbinamento al Bulk per stimare lo spessore se non misurato.">?</span></label>
+          <input id="paperGsm" type="number" min="30" step="1" value="135">
+        </div>
+        <div class="field">
+          <label for="bulk"><span data-i18n="lblBulk">Bulk carta (cm³/g)</span><span class="tooltip-icon" data-i18n-tt="ttBulk" data-tooltip="Mano (o volume specifico) della carta. Carte usomano hanno solitamente bulk > 1, carte patinate < 1.">?</span></label>
+          <input id="bulk" type="number" min="0.5" step="0.05" value="1.0">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="manualThicknessMm"><span data-i18n="lblManualThick">Spessore manuale (mm)</span><span class="tooltip-icon" data-i18n-tt="ttManualThick" data-tooltip="Inserisci lo spessore effettivo del singolo foglio se lo hai misurato con un micrometro. Ignora Grammatura e Bulk.">?</span></label>
+          <input id="manualThicknessMm" type="number" min="0" step="0.001" data-i18n-ph="phOptional" placeholder="opzionale">
+          <span class="hint" data-i18n="hintThick">Se vuoto: spessore ≈ gram. × bulk / 1000.</span>
+        </div>
+        <div class="field">
+          <label for="creepScale"><span data-i18n="lblCreep">Fattore creep</span><span class="tooltip-icon" data-i18n-tt="ttCreep" data-tooltip="Moltiplicatore applicato al calcolo dello scostamento (creep). Aumenta o diminuisci se la piega della carta reale richiede compensazioni diverse dal teorico.">?</span></label>
+          <input id="creepScale" type="number" min="0" step="0.05" value="1">
+          <span class="hint" data-i18n="hintCreep">Riduci/aumenta se la prova lo richiede.</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="coverType"><span data-i18n="lblCoverType">Tipo Copertina</span><span class="tooltip-icon" data-i18n-tt="ttCoverType" data-tooltip="Auto-copertinato: la copertina è nel PDF caricato. Copertina separata: accavallata esternamente, il suo spessore si somma al creep del blocco interno.">?</span></label>
+        <select id="coverType">
+          <option value="auto" selected data-i18n="optAutoCover">Auto-copertinato (integrata nel PDF)</option>
+          <option value="separate" data-i18n="optSepCover">Copertina separata (esterna, calcolo spessore extra)</option>
+        </select>
+      </div>
+
+      <div id="coverSettings" class="cover-settings" style="display: none;">
+        <h3 class="subsection-title" data-i18n="extCoverTitle">Impostazioni Copertina Esterna</h3>
+        <div class="grid-2">
+          <div class="field">
+            <label for="coverSpreads"><span data-i18n="lblCovSpreads">Quartini copertina</span><span class="tooltip-icon" data-i18n-tt="ttCovSpreads" data-tooltip="Numero di fogli piegati (quartini) che formano la copertina. Solitamente 1.">?</span></label>
+            <input id="coverSpreads" type="number" min="1" step="1" value="1">
+          </div>
+          <div class="field">
+            <label for="coverGsm"><span data-i18n="lblCovGsm">Grammatura (g/m²)</span><span class="tooltip-icon" data-i18n-tt="ttCovGsm" data-tooltip="Grammatura della carta di copertina.">?</span></label>
+            <input id="coverGsm" type="number" min="30" step="1" value="300">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="coverBulk"><span data-i18n="lblCovBulk">Bulk carta (cm³/g)</span><span class="tooltip-icon" data-i18n-tt="ttCovBulk" data-tooltip="Mano (o volume specifico) della carta di copertina.">?</span></label>
+            <input id="coverBulk" type="number" min="0.5" step="0.05" value="1.0">
+          </div>
+          <div class="field">
+            <label for="coverManualThicknessMm"><span data-i18n="lblCovManual">Spess. manuale (mm)</span><span class="tooltip-icon" data-i18n-tt="ttCovManual" data-tooltip="Inserisci lo spessore effettivo se lo hai misurato, altrimenti usa grammatura e bulk.">?</span></label>
+            <input id="coverManualThicknessMm" type="number" min="0" step="0.001" data-i18n-ph="phOptional" placeholder="opzionale">
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="creepMode"><span data-i18n="lblCreepMode">Direzione compensazione creep</span><span class="tooltip-icon" data-i18n-tt="ttCreepMode" data-tooltip="Metodo standard: i fogli interni si stringono verso il dorso per compensare lo spessore della piega.">?</span></label>
+        <select id="creepMode">
+          <option value="inward" selected data-i18n="optInward">Progressivo verso il dorso: foglio esterno fermo, fogli interni compensati</option>
+          <option value="none" data-i18n="optNone">Non applicare creep</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="colorMode"><span data-i18n="lblColorMode">Profilo colore dei segni applicati</span><span class="tooltip-icon" data-i18n-tt="ttColorMode" data-tooltip="Scegli se forzare i crocini a CMYK (Nero di registro 100/100/100/100) o RGB (Nero). Lascia in 'Auto' per rilevare dal documento.">?</span></label>
+        <select id="colorMode">
+          <option value="auto" selected data-i18n="optColorAuto">Rileva automaticamente dal documento</option>
+          <option value="cmyk" data-i18n="optColorCmyk">Forza CMYK (nero di registro)</option>
+          <option value="rgb" data-i18n="optColorRgb">Forza RGB (nero pieno)</option>
+        </select>
+        <span class="hint" id="colorModeDetected" data-i18n="hintColorStart">Carica un PDF per rilevare il profilo colore.</span>
+      </div>
+
+      <div class="toggle-row">
+        <label for="addMarks"><span data-i18n="lblAddMarks">Aggiungi crocini di taglio</span><span class="tooltip-icon" data-i18n-tt="ttAddMarks" data-tooltip="Abilita il disegno automatico dei crocini di ritaglio su ogni pagina imposta (tranne nel lato interno del dorso).">?</span></label>
+        <input id="addMarks" type="checkbox" checked>
+      </div>
+      <div class="toggle-row">
+        <label for="drawFold"><span data-i18n="lblDrawFold">Disegna segni di piega dorso</span><span class="tooltip-icon" data-i18n-tt="ttDrawFold" data-tooltip="Disegna due piccoli segni di riferimento per il posizionamento esatto della piega/cordonatura al centro del foglio.">?</span></label>
+        <input id="drawFold" type="checkbox" checked>
+      </div>
+      <div class="toggle-row">
+        <label for="keepOuterBleed"><span data-i18n="lblKeepOuter">Mantieni bleed esterni e testa/piede</span><span class="tooltip-icon" data-i18n-tt="ttKeepOuter" data-tooltip="Mantiene il bleed su testa, piede e taglio esterno per consentire una corretta rifilatura dell'opuscolo finito.">?</span></label>
+        <input id="keepOuterBleed" type="checkbox" checked disabled>
+      </div>
+
+      <div class="actions">
+        <button id="analyzeBtn" class="secondary" disabled data-i18n="btnAnalyze">Analizza PDF</button>
+        <button id="generateBtn" class="primary" disabled data-i18n="btnGenerate">Genera PDF imposto</button>
+      </div>
+      <div id="status" class="status" data-i18n="statusWait">In attesa del PDF sorgente.</div>
+    </aside>
+
+    <section class="card panel">
+      <div class="section-title">
+        <h2 data-i18n="previewTitle">Anteprima e riepilogo</h2>
+      </div>
+      <div class="metrics">
+        <div class="metric"><span data-i18n="metPages">Pagine sorgente</span><strong id="mPages">—</strong></div>
+        <div class="metric"><span data-i18n="metSheets">Fogli imposti</span><strong id="mSheets">—</strong></div>
+        <div class="metric"><span data-i18n="metTrim">Trim stimato</span><strong id="mTrim">—</strong></div>
+        <div class="metric"><span data-i18n="metCreep">Creep max</span><strong id="mCreep">—</strong></div>
+      </div>
+      <div class="preview-wrap">
+        <canvas id="previewCanvas" width="900" height="600"></canvas>
+      </div>
+      <div class="note" data-i18n="previewNote">
+        Il bleed centrale viene tagliato in imposizione: dalla pagina sinistra viene rimossa l'abbondanza destra, dalla pagina destra viene rimossa l'abbondanza sinistra. In questo modo i due trim al vivo si incontrano sulla linea di piega del dorso.
+      </div>
+      <table class="signature-table" id="sigTable">
+        <thead><tr><th data-i18n="thSheet">Foglio</th><th data-i18n="thSide">Lato</th><th data-i18n="thLeft">Pagina sinistra</th><th data-i18n="thRight">Pagina destra</th><th data-i18n="thCreep">Creep</th></tr></thead>
+        <tbody><tr><td colspan="5" id="sigTableEmpty" data-i18n="tbEmpty">Carica un PDF per vedere la segnatura.</td></tr></tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-divider"></div>
+    <p class="footer-sig" data-i18n="footerSig">by <span>Gabriele Falcinelli</span> — uso libero e gratuito</p>
+  </footer>
+
+  <script src="lang.js"></script>
+  <script>
+    // Instructions toggle
+    const toggle = document.getElementById('instrToggle');
+    const panel  = document.getElementById('instrPanel');
+    toggle.addEventListener('click', () => {
+      const open = panel.classList.toggle('visible');
+      toggle.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', open);
+    });
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>

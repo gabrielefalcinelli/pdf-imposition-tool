@@ -1,0 +1,4 @@
+#!/bin/bash
+APP_PATH=$(dirname "$0")
+INDEX_PATH="$APP_PATH/../../../index.html"
+open "file://$INDEX_PATH"
